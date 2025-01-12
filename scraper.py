@@ -13,7 +13,7 @@ def download(url: str, savepath: str = "./scraperdownloads/"):
 
     if response.status_code == 200:
         with open(filename, 'wb') as file:
-            for chunk in response.iter_content(chunk_sise=8192):
+            for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
 
         print(f"downloaded {filename}")
@@ -53,6 +53,10 @@ def imgscraper(url: str, savepath: str = "./scraperdownloads/img/", numtoget: in
             break
 
     print(f"scraped {numtoget} images")
+    print(f"stored at {savepath}")
+
+# TODO: remove this when shipping
+imgscraper("https://reddit.com/")
 
 def vidscraper(url: str, savepath: str="./scraperdownloads/vids/", numtoget: int = 1):
     '''
@@ -86,3 +90,4 @@ def vidscraper(url: str, savepath: str="./scraperdownloads/vids/", numtoget: int
             break
 
     print(f"scraped {numtoget} videos")
+    print(f"stored at {savepath}")
