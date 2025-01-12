@@ -9,8 +9,8 @@ def cleanfilenamefromurl(url: str) -> str:
     return filename
 
 
-def download(url: str, savepath: str = "./scraperdownloads/"):
-    filename = cleanfilenamefromurl(url)
+def download(url: str, savepath: str = "./scraperdownloads/", name: str = None):
+    filename = name or cleanfilenamefromurl(url)
     filename = os.path.join(savepath, filename)
 
     print(f"downloading {filename}")
@@ -29,7 +29,7 @@ def download(url: str, savepath: str = "./scraperdownloads/"):
     else:
         print(f"failed to download {filename}")
 
-def imgscraper(url: str, savepath: str = "./scraperdownloads/img/", numtoget: int = 1, blacklistedclasses: list = ['community_banner', 'thumbnail_img', 'shreddit-subreddit-icon__icon', 'avatar', ''], blacklistedalt: list = ['icon']):
+def imgscraper(url: str, savepath: str = "./scraperdownloads/img/", numtoget: int = 1, blacklistedclasses: list = ['community_banner', 'thumbnail_img', 'shreddit-subreddit-icon__icon', 'avatar', 'preview-img', 'post-background-image-filter'], blacklistedalt: list = ['icon', 'avatar']):
     '''
     scrapes images from the specified website
     '''
@@ -48,40 +48,64 @@ def imgscraper(url: str, savepath: str = "./scraperdownloads/img/", numtoget: in
 
     count = 0
     for imgtag in soup.find_all('img'):
+        print()
+        print()
+        print(f"image {count}/{numtoget}")
+        print()
+
         imgclasses = imgtag.get("class", [])
         imgalt = imgtag.get("alt", "")
 
-        if any(cls in clsblacklist for cls in imgclasses):
-            print(f"skipping image with blacklisted class {imgclasses}")
+        print(f"checking image with tags:")
+        print(f"classes: {imgclasses}")
+        print(f"alts: {imgalt}")
+
+        isblacklistedclasses = [cls for cls in clsblacklist if cls in imgclasses]
+        isblacklistedalts = [alt for alt in altblacklist if alt in imgalt]
+
+        if isblacklistedclasses:
+            print(f"skipping image with blacklisted class {isblacklistedclasses}")
             continue
         
-        if any(alt in altblacklist for alt in imgalt):
-            print(f"skipping image with blacklisted alt {imgalt}")
+        if isblacklistedalts:
+            print(f"skipping image with blacklisted alt {isblacklistedalts}")
             continue
+
+        print()
+        print("image passes checks")
+        print("downloading image")
+        print()
 
         imgurl = urljoin(url, imgtag.get("src"))
         if imgurl:
             try:
-                filename = download(imgurl, savepath)
+                filename = download(imgurl, savepath, name=imgtag.get("alt"))
+                print(imgurl)
+                print(f"downloaded image: {filename}")
                 count += 1
-                print(f"scraped image: {filename}")
             except Exception as e:
-                print(f"failed to scrape image {imgurl}: {e}")
+                print(f"failed to download image {imgurl}: {e}")
+
+        else: print(f"image url does not exist, skipping")
         
         if count >= numtoget:
             break
-
+    
+    print()
+    print()
     print(f"scraped {numtoget} images")
     print(f"stored at {savepath}")
 
 # TODO: remove this when shipping
-imgscraper("https://reddit.com/r/femboy")
+imgscraper("https://reddit.com/r/femboy", numtoget=2)
 
-def vidscraper(url: str, savepath: str="./scraperdownloads/vids/", numtoget: int = 1):
+def vidscraper(url: str, savepath: str="./scraperdownloads/vids/", numtoget: int = 1, blacklistedclasses: list = ['promo-video'], blacklistedalt: list = ['promo']):
     '''
     scrapes images video from the specified website
     '''
     os.makedirs(savepath, exist_ok=True)
+    clsblacklist = blacklistedclasses or []
+    altblacklist = blacklistedalt or []
 
     response = requests.get(url)
     response.raise_for_status()
@@ -94,6 +118,34 @@ def vidscraper(url: str, savepath: str="./scraperdownloads/vids/", numtoget: int
 
     count = 0
     for vidtag in soup.find('video'):
+        print()
+        print()
+        print(f"video {count}/{numtoget}")
+        print()
+
+        vidclasses = vidtag.get("class", [])
+        vidalt = vidtag.get("alt", "")
+
+        print(f"checking video with tags:")
+        print(f"classes: {vidclasses}")
+        print(f"alts: {vidalt}")
+
+        isblacklistedclasses = (cls in clsblacklist for cls in vidclasses)
+        isblacklistedalts = (alt in altblacklist for alt in vidalt)
+
+        if any(isblacklistedclasses):
+            print(f"skipping video with blacklisted class {isblacklistedclasses}")
+            continue
+        
+        if any(isblacklistedalts):
+            print(f"skipping video with blacklisted alt {isblacklistedalts}")
+            continue
+
+        print()
+        print("video passes checks")
+        print("downloading video")
+        print()
+
         videosources = vidtag.findall("source")
         for source in videosources:
             vidurl = urljoin(url, source.get("src"))
@@ -104,9 +156,12 @@ def vidscraper(url: str, savepath: str="./scraperdownloads/vids/", numtoget: int
                     print(f"scraped video: {filename}")
                 except Exception as e:
                     print(f"failed to scrape video {vidurl}: {e}")
+            else: print(f"video url does not exist, skipping")
         
         if count >= numtoget:
             break
 
+    print()
+    print()
     print(f"scraped {numtoget} videos")
     print(f"stored at {savepath}")
