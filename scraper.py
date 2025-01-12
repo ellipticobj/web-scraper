@@ -206,5 +206,5 @@ def vidscraper(url: str, savepath: str="./scraperdownloads/vids/", numtoget: int
 
 
 # debugging
-imgscraper("https://reddit.com/r/femboy", numtoget=1)
-vidscraper("https://reddit.com/r/femboy", numtoget=1)
+# imgscraper("https://reddit.com/r/femboy", numtoget=1)
+# vidscraper("https://reddit.com/r/femboy", numtoget=1)
