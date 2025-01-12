@@ -2,24 +2,55 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
+import re
+import mimetypes
 
 def cleanfilenamefromurl(url: str) -> str:
     parsedurl = urlparse(url)
     filename = os.path.basename(parsedurl.path)
     return filename
 
+def cleantext(text: str) -> str:
+    # from chatgpt
+    emoji_pattern = re.compile(
+        "[\U00010000-\U0010FFFF]"  # Match emojis (Unicode Supplementary Multilingual Plane)
+        "|[\u2600-\u26FF]"          # Match miscellaneous symbols
+        "|[\u2700-\u27BF]"          # Match dingbats
+        "|[\U0001F300-\U0001F5FF]"  # Match various symbols
+        "|[\U0001F600-\U0001F64F]"  # Match emoticons
+        "|[\U0001F680-\U0001F6FF]"  # Match transport & map symbols
+    )
+    text = emoji_pattern.sub("", text)
+
+    text = re.sub(r"[^a-zA-Z0-9\s]", "", text)
+
+    text = " ".join(text.split())
+
+    return text
+
+def getfileext(url: str, response: requests.Response) -> str:
+    parsedurl = urlparse(url)
+    ext = os.path.splitext(parsedurl.path)[1]
+    if ext:
+        return ext
+    
+    # from chatgpt
+    contenttype = response.headers.get('content-type')
+    ext = mimetypes.guess_extension(contenttype)
+    return ext or ""
 
 def download(url: str, savepath: str = "./scraperdownloads/", name: str = None):
-    filename = name or cleanfilenamefromurl(url)
-    filename = os.path.join(savepath, filename)
-
-    print(f"downloading {filename}")
-
     response = requests.get(url, stream=True)
     response.raise_for_status()
 
+    basename = cleantext(name) or cleanfilenamefromurl(url)
+    filename = f"{basename}{getfileext(url, response)}"
+    filepath = os.path.join(savepath, filename)
+
+    print(f"downloading {filename}")
+
     if response.status_code == 200:
-        with open(filename, 'wb') as file:
+        with open(filepath, 'wb') as file:
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
 
@@ -82,12 +113,12 @@ def imgscraper(url: str, savepath: str = "./scraperdownloads/img/", numtoget: in
                 filename = download(imgurl, savepath, name=imgtag.get("alt"))
                 print(imgurl)
                 print(f"downloaded image: {filename}")
-                count += 1
             except Exception as e:
                 print(f"failed to download image {imgurl}: {e}")
 
         else: print(f"image url does not exist, skipping")
         
+        count += 1
         if count >= numtoget:
             break
     
@@ -130,14 +161,14 @@ def vidscraper(url: str, savepath: str="./scraperdownloads/vids/", numtoget: int
         print(f"classes: {vidclasses}")
         print(f"alts: {vidalt}")
 
-        isblacklistedclasses = (cls in clsblacklist for cls in vidclasses)
-        isblacklistedalts = (alt in altblacklist for alt in vidalt)
+        isblacklistedclasses = [cls for cls in clsblacklist if cls in vidclasses]
+        isblacklistedalts = [alt for alt in altblacklist if alt in vidalt]
 
-        if any(isblacklistedclasses):
+        if isblacklistedclasses:
             print(f"skipping video with blacklisted class {isblacklistedclasses}")
             continue
         
-        if any(isblacklistedalts):
+        if isblacklistedalts:
             print(f"skipping video with blacklisted alt {isblacklistedalts}")
             continue
 
