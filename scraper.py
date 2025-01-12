@@ -130,7 +130,7 @@ def imgscraper(url: str, savepath: str = "./scraperdownloads/img/", numtoget: in
     print()
     print()
     print(f"scraped {numtoget} images")
-    print(f"stored at {savepath}{filename}")
+    print(f"stored at {savepath}")
 
 def vidscraper(url: str, savepath: str="./scraperdownloads/vids/", numtoget: int = 1, blacklistedclasses: list = ['promo-video'], blacklistedalt: list = ['promo']):
     '''

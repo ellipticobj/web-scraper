@@ -1,6 +1,7 @@
 from scraper import *
 
 print("web scraper")
+print()
 
 while True:
     choice = input('''1. image
