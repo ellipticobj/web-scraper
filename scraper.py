@@ -1,14 +1,21 @@
 import os
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
+
+def cleanfilenamefromurl(url: str) -> str:
+    parsedurl = urlparse(url)
+    filename = os.path.basename(parsedurl.path)
+    return filename
+
 
 def download(url: str, savepath: str = "./scraperdownloads/"):
-    filename = os.path.join(savepath, url.split('/')[-1])
+    filename = cleanfilenamefromurl(url)
+    filename = os.path.join(savepath, filename)
 
     print(f"downloading {filename}")
 
-    response = requests.get(url)
+    response = requests.get(url, stream=True)
     response.raise_for_status()
 
     if response.status_code == 200:
@@ -22,12 +29,13 @@ def download(url: str, savepath: str = "./scraperdownloads/"):
     else:
         print(f"failed to download {filename}")
 
-
-def imgscraper(url: str, savepath: str = "./scraperdownloads/img/", numtoget: int = 1):
+def imgscraper(url: str, savepath: str = "./scraperdownloads/img/", numtoget: int = 1, blacklistedclasses: list = ['community_banner', 'thumbnail_img', 'shreddit-subreddit-icon__icon', 'avatar', ''], blacklistedalt: list = ['icon']):
     '''
     scrapes images from the specified website
     '''
     os.makedirs(savepath, exist_ok=True)
+    clsblacklist = blacklistedclasses or []
+    altblacklist = blacklistedalt or []
 
     response = requests.get(url)
     response.raise_for_status()
@@ -40,6 +48,17 @@ def imgscraper(url: str, savepath: str = "./scraperdownloads/img/", numtoget: in
 
     count = 0
     for imgtag in soup.find_all('img'):
+        imgclasses = imgtag.get("class", [])
+        imgalt = imgtag.get("alt", "")
+
+        if any(cls in blacklist for cls in imgclasses):
+            print(f"skipping image with blacklisted class {imgclasses}")
+            continue
+        
+        if any(alts in altblacklist for alt in imgalt):
+            print(f"skipping image with blacklisted alt {imgalt}")
+            continue
+
         imgurl = urljoin(url, imgtag.get("src"))
         if imgurl:
             try:
@@ -56,7 +75,7 @@ def imgscraper(url: str, savepath: str = "./scraperdownloads/img/", numtoget: in
     print(f"stored at {savepath}")
 
 # TODO: remove this when shipping
-imgscraper("https://reddit.com/")
+imgscraper("https://reddit.com/r/femboy")
 
 def vidscraper(url: str, savepath: str="./scraperdownloads/vids/", numtoget: int = 1):
     '''
