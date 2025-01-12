@@ -60,7 +60,7 @@ def download(url: str, savepath: str = "./scraperdownloads/", name: str = None):
     else:
         print(f"failed to download {filename}")
 
-def imgscraper(url: str, savepath: str = "./scraperdownloads/img/", numtoget: int = 1, blacklistedclasses: list = ['community_banner', 'thumbnail_img', 'shreddit-subreddit-icon__icon', 'avatar', 'preview-img', 'post-background-image-filter'], blacklistedalt: list = ['icon', 'avatar']):
+def imgscraper(url: str, savepath: str = "./scraperdownloads/img/", numtoget: int = 1, blacklistedclasses: list = ['community_banner', 'thumbnail_img', 'shreddit-subreddit-icon__icon', 'avatar', 'preview-img', 'post-background-image-filter'], blacklistedalt: list = ['icon', 'avatar', "Media_Offline"]):
     '''
     scrapes images from the specified website
     '''
