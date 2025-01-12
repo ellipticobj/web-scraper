@@ -51,11 +51,11 @@ def imgscraper(url: str, savepath: str = "./scraperdownloads/img/", numtoget: in
         imgclasses = imgtag.get("class", [])
         imgalt = imgtag.get("alt", "")
 
-        if any(cls in blacklist for cls in imgclasses):
+        if any(cls in clsblacklist for cls in imgclasses):
             print(f"skipping image with blacklisted class {imgclasses}")
             continue
         
-        if any(alts in altblacklist for alt in imgalt):
+        if any(alt in altblacklist for alt in imgalt):
             print(f"skipping image with blacklisted alt {imgalt}")
             continue
 
